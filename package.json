@@ -9,12 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@biconomy/account": "^3.1.2",
-    "@biconomy/bundler": "^3.1.2",
-    "@biconomy/common": "^3.1.2",
-    "@biconomy/core-types": "^3.1.2",
-    "@biconomy/modules": "^3.1.2",
-    "@biconomy/paymaster": "^3.1.2",
+    "@biconomy/account": "^4.0.0",
     "@biconomy/particle-auth": "^3.1.1",
     "ethers": "^5.7.2",
     "next": "14.0.1",
