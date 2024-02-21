@@ -64,6 +64,7 @@ export default function Home() {
         signer: particleSigner,
         biconomyPaymasterApiKey: config.biconomyPaymasterApiKey,
         bundlerUrl: config.bundlerUrl,
+        chainId: chainId,
         rpcUrl: "https://rpc.ankr.com/polygon_mumbai",
       });
 
