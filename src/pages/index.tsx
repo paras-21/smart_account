@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { IPaymaster, BiconomyPaymaster } from "@biconomy/paymaster";
-import { IBundler, Bundler } from "@biconomy/bundler";
 import {
+  createSmartAccountClient,
   BiconomySmartAccountV2,
-  BiconomySmartAccountV2Config,
-} from "@biconomy/account";
-import {
-  IHybridPaymaster,
-  SponsorUserOperationDto,
   PaymasterMode,
-} from "@biconomy/paymaster";
+} from "@biconomy/account";
 import { ethers } from "ethers";
 import { ParticleAuthModule, ParticleProvider } from "@biconomy/particle-auth";
 import { contractABI } from "../contract/contractABI";
@@ -57,23 +51,28 @@ export default function Home() {
         "any"
       );
 
-      const biconomySmartAccountConfig: BiconomySmartAccountV2Config = {
-        signer: web3Provider.getSigner(),
-        chainId: chainId,
+      const particleSigner = web3Provider.getSigner();
+      console.log("Particle Signer", particleSigner);
+
+      const config = {
         biconomyPaymasterApiKey:
           "-RObQRX9ei.fc6918eb-c582-4417-9d5a-0507b17cfe71",
-        bundlerUrl: `https://bundler.biconomy.io/api/v2/${chainId}/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`,
+        bundlerUrl: `https://bundler.biconomy.io/api/v2/${chainId}/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`, // <-- Read about this at https://docs.biconomy.io/dashboard#bundler-url
       };
 
-      let biconomySmartAccount = await BiconomySmartAccountV2.create(
-        biconomySmartAccountConfig
-      );
+      const smartWallet = await createSmartAccountClient({
+        signer: particleSigner,
+        biconomyPaymasterApiKey: config.biconomyPaymasterApiKey,
+        bundlerUrl: config.bundlerUrl,
+        chainId: chainId,
+        rpcUrl: "https://rpc.ankr.com/polygon_mumbai",
+      });
 
-      console.log(biconomySmartAccount);
-      setSmartAccount(biconomySmartAccount);
-      const address = await biconomySmartAccount.getAccountAddress();
-      console.log(address);
-      setSmartAccountAddress(address);
+      console.log("Biconomy Smart Account", smartWallet);
+      setSmartAccount(smartWallet);
+      const saAddress = await smartWallet.getAccountAddress();
+      console.log("Smart Account Address", saAddress);
+      setSmartAccountAddress(saAddress);
     } catch (error) {
       console.error(error);
     }
@@ -107,63 +106,26 @@ export default function Home() {
         data: minTx.data,
       };
 
-      toast.update(toastId, { render: "Building UserOp", autoClose: false });
-      let userOp = await smartAccount?.buildUserOp([tx1]);
-      console.log("UserOp", { userOp });
-      const biconomyPaymaster =
-        smartAccount?.paymaster as IHybridPaymaster<SponsorUserOperationDto>;
-      let paymasterServiceData: SponsorUserOperationDto = {
-        mode: PaymasterMode.SPONSORED,
-        smartAccountInfo: {
-          name: "BICONOMY",
-          version: "2.0.0",
-        },
-      };
-
-      const paymasterAndDataResponse =
-        await biconomyPaymaster.getPaymasterAndData(
-          //@ts-ignore
-          userOp,
-          paymasterServiceData
-        );
+      toast.update(toastId, {
+        render: "Sending Transaction",
+        autoClose: false,
+      });
 
       //@ts-ignore
-      userOp.paymasterAndData = paymasterAndDataResponse.paymasterAndData;
-
-      //Add the below if statement if you encounter AA34 signature Error
-      if (
-        paymasterAndDataResponse.callGasLimit &&
-        paymasterAndDataResponse.verificationGasLimit &&
-        paymasterAndDataResponse.preVerificationGas
-      ) {
-        // Returned gas limits must be replaced in your op as you update paymasterAndData.
-        // Because these are the limits paymaster service signed on to generate paymasterAndData
-        // If you receive AA34 error check here..
-
-        //@ts-ignore
-        userOp.callGasLimit = paymasterAndDataResponse.callGasLimit;
-        //@ts-ignore
-        userOp.verificationGasLimit =
-          paymasterAndDataResponse.verificationGasLimit;
-        //@ts-ignore
-        userOp.preVerificationGas = paymasterAndDataResponse.preVerificationGas;
-      }
-
-      toast.update(toastId, { render: "Sending UserOp", autoClose: false });
+      const userOpResponse = await smartAccount?.sendTransaction(tx1, {
+        paymasterServiceData: { mode: PaymasterMode.SPONSORED },
+      });
       //@ts-ignore
-      const userOpResponse = await smartAccount?.sendUserOp(userOp);
-      console.log("userOpHash", { userOpResponse });
-      //@ts-ignore
-      const { receipt } = await userOpResponse.wait(1);
-      console.log("txHash", receipt.transactionHash);
+      const { transactionHash } = await userOpResponse.waitForTxHash();
+      console.log("Transaction Hash", transactionHash);
 
-      if (receipt.transactionHash) {
+      if (transactionHash) {
         toast.update(toastId, {
           render: "Transaction Successful",
           type: "success",
           autoClose: 5000,
         });
-        setTxnHash(receipt.transactionHash);
+        setTxnHash(transactionHash);
       }
 
       await getCountId();
