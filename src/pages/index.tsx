@@ -35,6 +35,8 @@ export default function Home() {
     clientKey: "cDUIugdEkRHx7DphbHi0TnV1Q2PJNsruqn0AtnSZ",
     //Use your own appId
     appId: "0f44c567-b77f-417c-871b-7d2721de3fe6",
+    chainId: chainId,
+    chainName: "Polygon",
     wallet: {
       displayWalletEntry: true,
       defaultWalletEntryPosition: ParticleAuthModule.WalletEntryPosition.BR,
@@ -64,7 +66,6 @@ export default function Home() {
         signer: particleSigner,
         biconomyPaymasterApiKey: config.biconomyPaymasterApiKey,
         bundlerUrl: config.bundlerUrl,
-        chainId: chainId,
         rpcUrl: "https://rpc.ankr.com/polygon_mumbai",
       });
 
