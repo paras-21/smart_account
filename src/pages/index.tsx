@@ -10,14 +10,6 @@ import { contractABI } from "../contract/contractABI";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Create a provider for the Polygon Mumbai network
-const provider = new ethers.providers.JsonRpcProvider(
-  "https://rpc.ankr.com/polygon_mumbai"
-);
-
-// Specify the chain ID for Polygon Mumbai
-let chainId = 80001; // Polygon Mumbai or change as per your preferred chain
-
 export default function Home() {
   const [smartAccount, setSmartAccount] =
     useState<BiconomySmartAccountV2 | null>(null);
@@ -26,22 +18,44 @@ export default function Home() {
   );
   const [count, setCount] = useState<string | null>(null);
   const [txnHash, setTxnHash] = useState<string | null>(null);
+  const [chainSelected, setChainSelected] = useState<number>(0);
 
-  //Particle auth will require api keys which you can get from the Particle Dashboard. (https://dashboard.particle.network/)
-  const particle = new ParticleAuthModule.ParticleNetwork({
-    //Use your own project ID
-    projectId: "e9944f42-f219-4f90-a765-356841c5bcc3",
-    //Use your own clientKey
-    clientKey: "cDUIugdEkRHx7DphbHi0TnV1Q2PJNsruqn0AtnSZ",
-    //Use your own appId
-    appId: "0f44c567-b77f-417c-871b-7d2721de3fe6",
-    chainId: chainId,
-    chainName: "Polygon",
-    wallet: {
-      displayWalletEntry: true,
-      defaultWalletEntryPosition: ParticleAuthModule.WalletEntryPosition.BR,
+  const chains = [
+    {
+      chainId: 11155111,
+      name: "Ethereum Sepolia",
+      providerUrl: "https://eth-sepolia.public.blastapi.io",
+      incrementCountContractAdd: "0xd9ea570eF1378D7B52887cE0342721E164062f5f",
+      biconomyPaymasterApiKey: "gJdVIBMSe.f6cc87ea-e351-449d-9736-c04c6fab56a2",
     },
-  });
+    {
+      chainId: 80001,
+      name: "Polygon Mumbai",
+      providerUrl: "https://rpc.ankr.com/polygon_mumbai",
+      incrementCountContractAdd: "0xc34E02663D5FFC7A1CeaC3081bF811431B096C8C",
+      biconomyPaymasterApiKey:
+        "-RObQRX9ei.fc6918eb-c582-4417-9d5a-0507b17cfe71",
+    },
+  ];
+
+  let particle: any;
+
+  useEffect(() => {
+    //Particle auth will require api keys which you can get from the Particle Dashboard. (https://dashboard.particle.network/)
+    particle = new ParticleAuthModule.ParticleNetwork({
+      //Use your own project ID
+      projectId: "e9944f42-f219-4f90-a765-356841c5bcc3",
+      //Use your own clientKey
+      clientKey: "cDUIugdEkRHx7DphbHi0TnV1Q2PJNsruqn0AtnSZ",
+      //Use your own appId
+      appId: "0f44c567-b77f-417c-871b-7d2721de3fe6",
+      chainId: chains[chainSelected].chainId,
+      wallet: {
+        displayWalletEntry: true,
+        defaultWalletEntryPosition: ParticleAuthModule.WalletEntryPosition.BR,
+      },
+    });
+  }, [chainSelected]);
 
   const connect = async () => {
     try {
@@ -57,16 +71,16 @@ export default function Home() {
       console.log("Particle Signer", particleSigner);
 
       const config = {
-        biconomyPaymasterApiKey:
-          "-RObQRX9ei.fc6918eb-c582-4417-9d5a-0507b17cfe71",
-        bundlerUrl: `https://bundler.biconomy.io/api/v2/${chainId}/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`, // <-- Read about this at https://docs.biconomy.io/dashboard#bundler-url
+        biconomyPaymasterApiKey: chains[chainSelected].biconomyPaymasterApiKey,
+        bundlerUrl: `https://bundler.biconomy.io/api/v2/${chains[chainSelected].chainId}/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`, // <-- Read about this at https://docs.biconomy.io/dashboard#bundler-url
       };
 
       const smartWallet = await createSmartAccountClient({
         signer: particleSigner,
         biconomyPaymasterApiKey: config.biconomyPaymasterApiKey,
         bundlerUrl: config.bundlerUrl,
-        rpcUrl: "https://rpc.ankr.com/polygon_mumbai",
+        rpcUrl: chains[chainSelected].providerUrl,
+        chainId: chains[chainSelected].chainId,
       });
 
       console.log("Biconomy Smart Account", smartWallet);
@@ -80,7 +94,10 @@ export default function Home() {
   };
 
   const getCountId = async () => {
-    const contractAddress = "0xc34E02663D5FFC7A1CeaC3081bF811431B096C8C";
+    const contractAddress = chains[chainSelected].incrementCountContractAdd;
+    const provider = new ethers.providers.JsonRpcProvider(
+      chains[chainSelected].providerUrl
+    );
     const contractInstance = new ethers.Contract(
       contractAddress,
       contractABI,
@@ -94,7 +111,10 @@ export default function Home() {
     try {
       const toastId = toast("Populating Transaction", { autoClose: false });
 
-      const contractAddress = "0xc34E02663D5FFC7A1CeaC3081bF811431B096C8C";
+      const contractAddress = chains[chainSelected].incrementCountContractAdd;
+      const provider = new ethers.providers.JsonRpcProvider(
+        chains[chainSelected].providerUrl
+      );
       const contractInstance = new ethers.Contract(
         contractAddress,
         contractABI,
@@ -127,9 +147,8 @@ export default function Home() {
           autoClose: 5000,
         });
         setTxnHash(transactionHash);
+        await getCountId();
       }
-
-      await getCountId();
     } catch (error) {
       console.log(error);
       toast.error("Transaction Unsuccessful", { autoClose: 5000 });
@@ -142,12 +161,36 @@ export default function Home() {
         Biconomy-Particle
       </div>
       {!smartAccount && (
-        <button
-          className="w-[10rem] h-[3rem] bg-orange-300 text-black font-bold rounded-lg"
-          onClick={connect}
-        >
-          Particle Sign in
-        </button>
+        <>
+          <div className="flex flex-row justify-center items-center gap-4">
+            <div
+              className={`w-[8rem] h-[3rem] cursor-pointer rounded-lg flex flex-row justify-center items-center text-white ${
+                chainSelected == 0 ? "bg-orange-600" : "bg-black"
+              } border-2 border-solid border-orange-400`}
+              onClick={() => {
+                setChainSelected(0);
+              }}
+            >
+              Eth Sepolia
+            </div>
+            <div
+              className={`w-[8rem] h-[3rem] cursor-pointer rounded-lg flex flex-row justify-center items-center text-white ${
+                chainSelected == 1 ? "bg-orange-600" : "bg-black"
+              } bg-black border-2 border-solid border-orange-400`}
+              onClick={() => {
+                setChainSelected(1);
+              }}
+            >
+              Poly Mumbai
+            </div>
+          </div>
+          <button
+            className="w-[10rem] h-[3rem] bg-orange-300 text-black font-bold rounded-lg"
+            onClick={connect}
+          >
+            Particle Sign in
+          </button>
+        </>
       )}
 
       {smartAccount && (
@@ -155,7 +198,7 @@ export default function Home() {
           {" "}
           <span>Smart Account Address</span>
           <span>{smartAccountAddress}</span>
-          <span>Network: Polygon Mumbai</span>
+          <span>Network: {chains[chainSelected].name}</span>
           <div className="flex flex-row justify-between items-start gap-8">
             <div className="flex flex-col justify-center items-center gap-4">
               <button
