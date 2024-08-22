@@ -147,7 +147,7 @@ export default function Home() {
       );
 
       console.log("Fee Quotes Response:", feeQuotesResponse); 
-      setFeeQuotes(feeQuotesResponse.feeQuotes); 
+      setFeeQuotes(feeQuotesResponse.feeQuotes || []); // Handle undefined feeQuotes
 
       return feeQuotesResponse;
     } catch (error) {
@@ -182,43 +182,50 @@ export default function Home() {
 
       const feeQuotesResponse = await getFeeQuotes();
       console.log("Fee Quotes", feeQuotesResponse);
-      const userSelectedFeeQuote = feeQuotesResponse?.feeQuotes?.[0]; 
 
-      toast.update(toastId, {
-        render: "Sending Transaction",
-        autoClose: false,
-      });
-      const recommendedMaxPriorityFeePerGas = feeQuotesResponse?.feeQuotes[0].maxGasFee;
-      console.log("recommendedMaxPriorityFeePerGas", recommendedMaxPriorityFeePerGas);
-      console.log("Sending Transaction",feeQuotesResponse?.tokenPaymasterAddress,userSelectedFeeQuote,feeQuotesResponse?.feeQuotes[0].tokenAddress);
-      const { waitForTxHash } = await smartAccount?.sendTransaction(
-        {
-          to: contractAddress,
-          data: encodedData || "0x",
-        },
-        {
-          paymasterServiceData: {
-            mode: PaymasterMode.ERC20,
-            feeQuote: userSelectedFeeQuote,
-            preferredToken: feeQuotesResponse?.feeQuotes[0].tokenAddress,
-            spender: feeQuotesResponse?.tokenPaymasterAddress,
-            maxApproval: true,
-            maxPriorityFeePerGas: recommendedMaxPriorityFeePerGas, 
-          },
-        }
-      );
+      if (feeQuotesResponse && feeQuotesResponse.feeQuotes && feeQuotesResponse.feeQuotes.length > 0) {
+        const userSelectedFeeQuote = feeQuotesResponse.feeQuotes[0]; 
 
-      const { transactionHash } = await waitForTxHash();
-      console.log("transactionHash", transactionHash);
-
-      if (transactionHash) {
         toast.update(toastId, {
-          render: "Transaction Successful",
-          type: "success",
-          autoClose: 5000,
+          render: "Sending Transaction",
+          autoClose: false,
         });
-        setTxnHash(transactionHash);
-        await getCountId();
+
+        const recommendedMaxPriorityFeePerGas = userSelectedFeeQuote.maxGasFee;
+        console.log("recommendedMaxPriorityFeePerGas", recommendedMaxPriorityFeePerGas);
+        console.log("Sending Transaction",feeQuotesResponse.tokenPaymasterAddress,userSelectedFeeQuote,feeQuotesResponse.feeQuotes[0].tokenAddress);
+
+        const { waitForTxHash } = await smartAccount?.sendTransaction(
+          {
+            to: contractAddress,
+            data: encodedData || "0x",
+          },
+          {
+            paymasterServiceData: {
+              mode: PaymasterMode.ERC20,
+              feeQuote: userSelectedFeeQuote,
+              preferredToken: feeQuotesResponse.feeQuotes[0].tokenAddress,
+              spender: feeQuotesResponse.tokenPaymasterAddress,
+              maxApproval: true,
+              // maxPriorityFeePerGas: recommendedMaxPriorityFeePerGas, // Remove this line
+            },
+          }
+        );
+
+        const { transactionHash } = await waitForTxHash();
+        console.log("transactionHash", transactionHash);
+
+        if (transactionHash) {
+          toast.update(toastId, {
+            render: "Transaction Successful",
+            type: "success",
+            autoClose: 5000,
+          });
+          setTxnHash(transactionHash);
+          await getCountId();
+        }
+      } else {
+        toast.error("No fee quotes available", { autoClose: 5000 });
       }
     } catch (error) {
       console.log(error);
