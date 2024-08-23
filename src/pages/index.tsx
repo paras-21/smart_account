@@ -7,10 +7,10 @@ import {
 } from "@biconomy/account";
 import { ethers } from "ethers";
 import { ParticleAuthModule, ParticleProvider } from "@biconomy/particle-auth";
-import { contractABI } from "../contract/contractABI"; // Assuming your ABI is in this file
+import { contractABI } from "../contract/contractABI"; 
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { privateKeyToAccount } from "viem/accounts";
+
 
 export default function Home() {
   const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
@@ -18,9 +18,9 @@ export default function Home() {
   const [count, setCount] = useState<string | null>(null);
   const [txnHash, setTxnHash] = useState<string | null>(null);
   const [chainSelected, setChainSelected] = useState<number>(0);
-  const [particleSigner, setParticleSigner] = useState<SupportedSigner | null>(null); // Store the signer
-  const [tokenBalance, setTokenBalance] = useState<string | null>(null); // State for token balance
-  const [feeQuotes, setFeeQuotes] = useState<any[]>([]); // State to store fee quotes
+  const [particleSigner, setParticleSigner] = useState<SupportedSigner | null>(null); 
+  const [tokenBalance, setTokenBalance] = useState<string | null>(null);
+  const [feeQuotes, setFeeQuotes] = useState<any[]>([]);
 
   const chains = [
     {
@@ -28,10 +28,10 @@ export default function Home() {
       name: "OP Sepolia",
       providerUrl: "https://sepolia.optimism.io",
       incrementCountContractAdd: "0xbF04612ff3067C170C911677D9A9c83A717de142",
-      biconomyPaymasterApiKey: "s4AKWctFg.55929663-9cf2-419a-91ff-56e71bd6305c", // Make sure this is the correct API key for your paymaster
+      biconomyPaymasterApiKey: "s4AKWctFg.55929663-9cf2-419a-91ff-56e71bd6305c", 
       explorerUrl: "https://sepolia-optimism.etherscan.io",
       usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
-      bundlerUrl: "https://bundler.biconomy.io/api/v2/11155420/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44", // Make sure this is the correct bundler URL for Sepolia
+      bundlerUrl: "https://bundler.biconomy.io/api/v2/11155420/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44", 
     },
     {
       chainId: 11155111,
@@ -80,12 +80,12 @@ export default function Home() {
       const particleSigner = web3Provider.getSigner();
       console.log("Particle Signer", particleSigner);
 
-      setParticleSigner(particleSigner); // Store the signer in state
+      setParticleSigner(particleSigner); 
 
       const smartWallet = await createSmartAccountClient({
-        signer: particleSigner, // Using the Particle signer here
-        biconomyPaymasterApiKey: chains[chainSelected].biconomyPaymasterApiKey, // Use the API key from the chain object
-        bundlerUrl: chains[chainSelected].bundlerUrl, // Use the bundler URL from the chain object
+        signer: particleSigner, 
+        biconomyPaymasterApiKey: chains[chainSelected].biconomyPaymasterApiKey, 
+        bundlerUrl: chains[chainSelected].bundlerUrl,
         rpcUrl: chains[chainSelected].providerUrl,
         chainId: chains[chainSelected].chainId,
       });
@@ -95,7 +95,7 @@ export default function Home() {
       console.log("Smart Account Address", saAddress);
       setSmartAccountAddress(saAddress);
 
-      // Get the token balance after connecting
+
       await getTokenBalance(saAddress);
     } catch (error) {
       console.error(error);
@@ -111,7 +111,7 @@ export default function Home() {
         provider
       );
       const balance = await usdcContract.balanceOf(accountAddress);
-      setTokenBalance(ethers.utils.formatUnits(balance, 6)); // Assuming USDC has 6 decimals
+      setTokenBalance(ethers.utils.formatUnits(balance, 6)); 
     } catch (error) {
       console.error("Error fetching token balance:", error);
     }
@@ -147,7 +147,7 @@ export default function Home() {
       );
 
       console.log("Fee Quotes Response:", feeQuotesResponse); 
-      setFeeQuotes(feeQuotesResponse.feeQuotes || []); // Handle undefined feeQuotes
+      setFeeQuotes(feeQuotesResponse.feeQuotes || []); 
 
       return feeQuotesResponse;
     } catch (error) {
@@ -207,7 +207,7 @@ export default function Home() {
               preferredToken: feeQuotesResponse.feeQuotes[0].tokenAddress,
               spender: feeQuotesResponse.tokenPaymasterAddress,
               maxApproval: true,
-              // maxPriorityFeePerGas: recommendedMaxPriorityFeePerGas, // Remove this line
+              // maxPriorityFeePerGas: recommendedMaxPriorityFeePerGas, 
             },
           }
         );
