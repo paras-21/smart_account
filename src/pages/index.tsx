@@ -10,7 +10,7 @@ import { ParticleAuthModule, ParticleProvider } from "@biconomy/particle-auth";
 import { contractABI } from "../contract/contractABI"; 
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { encodeFunctionData, parseAbi, Hex } from "viem";
 
 export default function Home() {
   const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
@@ -52,6 +52,16 @@ export default function Home() {
       explorerUrl: "https://www.oklink.com/amoy/tx/",
       usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
       bundlerUrl: "https://bundler.biconomy.io/api/v2/80002/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
+    },
+    {
+      chainId: 84532,
+      name: "Base Sepolia",
+      providerUrl: "https://sepolia.base.org",
+      incrementCountContractAdd: "0x5343CE3D2fB551aC1baE4b8c9F27c090C709384d",
+      biconomyPaymasterApiKey: "WzTt08IpQ.86445b9a-065e-447b-9064-f9e3282d8924",
+      explorerUrl: "https://www.oklink.com/amoy/tx/",
+      usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
+      bundlerUrl: "https://bundler.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
     },
   ];
 
@@ -194,26 +204,37 @@ export default function Home() {
         const recommendedMaxPriorityFeePerGas = userSelectedFeeQuote.maxGasFee;
         console.log("recommendedMaxPriorityFeePerGas", recommendedMaxPriorityFeePerGas);
         console.log("Sending Transaction",feeQuotesResponse.tokenPaymasterAddress,userSelectedFeeQuote,feeQuotesResponse.feeQuotes[0].tokenAddress);
+       
+        const encodedCall = encodeFunctionData({
+          abi: parseAbi(["function increment()"]),
+          functionName: "increment",
+          args: [],
+        });
 
-        const { waitForTxHash } = await smartAccount?.sendTransaction(
-          {
-            to: contractAddress,
-            data: encodedData || "0x",
-          },
+        const transaction = {
+          to: "0x5343CE3D2fB551aC1baE4b8c9F27c090C709384d",
+          data: encodedCall,
+        };
+
+        const { wait } = await smartAccount?.sendTransaction(
+          transaction,
           {
             paymasterServiceData: {
               mode: PaymasterMode.ERC20,
-              feeQuote: userSelectedFeeQuote,
-              preferredToken: feeQuotesResponse.feeQuotes[0].tokenAddress,
-              spender: feeQuotesResponse.tokenPaymasterAddress,
-              maxApproval: true,
-              // maxPriorityFeePerGas: recommendedMaxPriorityFeePerGas, 
+              preferredToken: "0x7683022d84F726a96c4A6611cD31DBf5409c0Ac9",
             },
           }
         );
 
-        const { transactionHash } = await waitForTxHash();
-        console.log("transactionHash", transactionHash);
+        const {
+          receipt: { transactionHash },
+          userOpHash,
+          success,
+        } = await wait();
+
+  
+   console.log("Transaction Hash", transactionHash);
+ 
 
         if (transactionHash) {
           toast.update(toastId, {
@@ -267,6 +288,16 @@ export default function Home() {
               }}
             >
               POLY AMOY
+            </div>
+            <div
+              className={`w-[8rem] h-[3rem] cursor-pointer rounded-lg flex flex-row justify-center items-center text-white ${
+                chainSelected == 3 ? "bg-white" : "bg-black"
+              } bg-black border-2 border-solid border-orange-400`}
+              onClick={() => {
+                setChainSelected(3);
+              }}
+            >
+              Base Sepolia
             </div>
           </div>
           <button
