@@ -7,18 +7,23 @@ import {
 } from "@biconomy/account";
 import { ethers } from "ethers";
 import { ParticleAuthModule, ParticleProvider } from "@biconomy/particle-auth";
-import { contractABI } from "../contract/contractABI"; 
+import { contractABI } from "../contract/contractABI";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { encodeFunctionData, parseAbi, Hex } from "viem";
 
 export default function Home() {
-  const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
-  const [smartAccountAddress, setSmartAccountAddress] = useState<string | null>(null);
+  const [smartAccount, setSmartAccount] =
+    useState<BiconomySmartAccountV2 | null>(null);
+  const [smartAccountAddress, setSmartAccountAddress] = useState<string | null>(
+    null
+  );
   const [count, setCount] = useState<string | null>(null);
   const [txnHash, setTxnHash] = useState<string | null>(null);
   const [chainSelected, setChainSelected] = useState<number>(0);
-  const [particleSigner, setParticleSigner] = useState<SupportedSigner | null>(null); 
+  const [particleSigner, setParticleSigner] = useState<SupportedSigner | null>(
+    null
+  );
   const [tokenBalance, setTokenBalance] = useState<string | null>(null);
   const [feeQuotes, setFeeQuotes] = useState<any[]>([]);
 
@@ -28,10 +33,11 @@ export default function Home() {
       name: "OP Sepolia",
       providerUrl: "https://sepolia.optimism.io",
       incrementCountContractAdd: "0xbF04612ff3067C170C911677D9A9c83A717de142",
-      biconomyPaymasterApiKey: "s4AKWctFg.55929663-9cf2-419a-91ff-56e71bd6305c", 
+      biconomyPaymasterApiKey: "s4AKWctFg.55929663-9cf2-419a-91ff-56e71bd6305c",
       explorerUrl: "https://sepolia-optimism.etherscan.io",
       usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
-      bundlerUrl: "https://bundler.biconomy.io/api/v2/11155420/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44", 
+      bundlerUrl:
+        "https://bundler.biconomy.io/api/v2/11155420/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
     },
     {
       chainId: 11155111,
@@ -41,7 +47,8 @@ export default function Home() {
       biconomyPaymasterApiKey: "4339CfYwM.bf9fb7a0-5534-4062-b08f-ba7d5a4eb203",
       explorerUrl: "https://sepolia.etherscan.io/tx/",
       usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
-      bundlerUrl: "https://bundler.biconomy.io/api/v2/11155111/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
+      bundlerUrl:
+        "https://bundler.biconomy.io/api/v2/11155111/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
     },
     {
       chainId: 80002,
@@ -51,7 +58,8 @@ export default function Home() {
       biconomyPaymasterApiKey: "Ku9PkEtK3.57cb3ccd-26d2-4ebd-9459-2f03481fd91f",
       explorerUrl: "https://www.oklink.com/amoy/tx/",
       usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
-      bundlerUrl: "https://bundler.biconomy.io/api/v2/80002/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
+      bundlerUrl:
+        "https://bundler.biconomy.io/api/v2/80002/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
     },
     {
       chainId: 84532,
@@ -61,7 +69,8 @@ export default function Home() {
       biconomyPaymasterApiKey: "WzTt08IpQ.86445b9a-065e-447b-9064-f9e3282d8924",
       explorerUrl: "https://www.oklink.com/amoy/tx/",
       usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
-      bundlerUrl: "https://bundler.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
+      bundlerUrl:
+        "https://bundler.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
     },
   ];
 
@@ -85,16 +94,19 @@ export default function Home() {
       const userInfo = await particle.auth.login();
       console.log("Logged in user:", userInfo);
       const particleProvider = new ParticleProvider(particle.auth);
-      const web3Provider = new ethers.providers.Web3Provider(particleProvider, "any");
+      const web3Provider = new ethers.providers.Web3Provider(
+        particleProvider,
+        "any"
+      );
 
       const particleSigner = web3Provider.getSigner();
       console.log("Particle Signer", particleSigner);
 
-      setParticleSigner(particleSigner); 
+      setParticleSigner(particleSigner);
 
       const smartWallet = await createSmartAccountClient({
-        signer: particleSigner, 
-        biconomyPaymasterApiKey: chains[chainSelected].biconomyPaymasterApiKey, 
+        signer: particleSigner,
+        biconomyPaymasterApiKey: chains[chainSelected].biconomyPaymasterApiKey,
         bundlerUrl: chains[chainSelected].bundlerUrl,
         rpcUrl: chains[chainSelected].providerUrl,
         chainId: chains[chainSelected].chainId,
@@ -105,7 +117,6 @@ export default function Home() {
       console.log("Smart Account Address", saAddress);
       setSmartAccountAddress(saAddress);
 
-
       await getTokenBalance(saAddress);
     } catch (error) {
       console.error(error);
@@ -114,14 +125,16 @@ export default function Home() {
 
   const getTokenBalance = async (accountAddress: string) => {
     try {
-      const provider = new ethers.providers.JsonRpcProvider(chains[chainSelected].providerUrl);
+      const provider = new ethers.providers.JsonRpcProvider(
+        chains[chainSelected].providerUrl
+      );
       const usdcContract = new ethers.Contract(
         chains[chainSelected].usdcAddress,
         ["function balanceOf(address account) view returns (uint256)"],
         provider
       );
       const balance = await usdcContract.balanceOf(accountAddress);
-      setTokenBalance(ethers.utils.formatUnits(balance, 6)); 
+      setTokenBalance(ethers.utils.formatUnits(balance, 6));
     } catch (error) {
       console.error("Error fetching token balance:", error);
     }
@@ -129,51 +142,21 @@ export default function Home() {
 
   const getCountId = async () => {
     const contractAddress = chains[chainSelected].incrementCountContractAdd;
-    const provider = new ethers.providers.JsonRpcProvider(chains[chainSelected].providerUrl);
-    const contractInstance = new ethers.Contract(contractAddress, contractABI, provider);
+    const provider = new ethers.providers.JsonRpcProvider(
+      chains[chainSelected].providerUrl
+    );
+    const contractInstance = new ethers.Contract(
+      contractAddress,
+      contractABI,
+      provider
+    );
     const countId = await contractInstance.getCount();
     setCount(countId.toString());
-  };
-
-  const getFeeQuotes = async () => {
-    try {
-      if (!smartAccount) {
-        throw new Error("Smart account is not initialized.");
-      }
-
-      const contractAddress = chains[chainSelected].incrementCountContractAdd;
-      const provider = new ethers.providers.JsonRpcProvider(chains[chainSelected].providerUrl);
-      const contractInstance = new ethers.Contract(contractAddress, contractABI, provider);
-      const encodedData = contractInstance.interface.encodeFunctionData("increment");
-
-      const feeQuotesResponse = await smartAccount.getTokenFees(
-        {
-          to: contractAddress,
-          data: encodedData,
-        },
-        {
-          paymasterServiceData: { mode: PaymasterMode.ERC20 },
-        }
-      );
-
-      console.log("Fee Quotes Response:", feeQuotesResponse); 
-      setFeeQuotes(feeQuotesResponse.feeQuotes || []); 
-
-      return feeQuotesResponse;
-    } catch (error) {
-      console.error("Error fetching fee quotes:", error);
-    }
   };
 
   const incrementCount = async () => {
     try {
       const toastId = toast("Populating Transaction", { autoClose: false });
-
-      const contractAddress = chains[chainSelected].incrementCountContractAdd;
-      const provider = new ethers.providers.JsonRpcProvider(chains[chainSelected].providerUrl);
-      const contractInstance = new ethers.Contract(contractAddress, contractABI, provider);
-
-      const encodedData = contractInstance.interface.encodeFunctionData("increment");
 
       if (!particleSigner) {
         throw new Error("Particle signer is not available.");
@@ -190,63 +173,57 @@ export default function Home() {
       const scwAddress = await smartAccount.getAccountAddress();
       console.log("SCW Address", scwAddress);
 
-      const feeQuotesResponse = await getFeeQuotes();
-      console.log("Fee Quotes", feeQuotesResponse);
+      toast.update(toastId, {
+        render: "Sending Transaction",
+        autoClose: false,
+      });
 
-      if (feeQuotesResponse && feeQuotesResponse.feeQuotes && feeQuotesResponse.feeQuotes.length > 0) {
-        const userSelectedFeeQuote = feeQuotesResponse.feeQuotes[0]; 
+      const encodedCall = encodeFunctionData({
+        abi: parseAbi(["function increment()"]),
+        functionName: "increment",
+        args: [],
+      });
 
+      const transaction = {
+        to: chains[chainSelected].incrementCountContractAdd,
+        data: encodedCall,
+      };
+
+      const feeQuotesResponse = await smartAccount.getTokenFees(transaction, {
+        paymasterServiceData: { mode: PaymasterMode.ERC20 },
+      });
+      const userSelectedFeeQuote = feeQuotesResponse.feeQuotes?.[0];
+
+      console.log("Fee Quote", userSelectedFeeQuote);
+
+      const { wait } = await smartAccount?.sendTransaction(transaction, {
+        paymasterServiceData: {
+          mode: PaymasterMode.ERC20,
+          feeQuote: userSelectedFeeQuote,
+          spender: feeQuotesResponse.tokenPaymasterAddress,
+          maxApproval: true,
+        },
+      });
+
+      const {
+        receipt: { transactionHash },
+        userOpHash,
+        success,
+      } = await wait();
+
+      console.log("Transaction Hash", transactionHash);
+
+      if (transactionHash) {
         toast.update(toastId, {
-          render: "Sending Transaction",
-          autoClose: false,
+          render: "Transaction Successful",
+          type: "success",
+          autoClose: 5000,
         });
-
-        const recommendedMaxPriorityFeePerGas = userSelectedFeeQuote.maxGasFee;
-        console.log("recommendedMaxPriorityFeePerGas", recommendedMaxPriorityFeePerGas);
-        console.log("Sending Transaction",feeQuotesResponse.tokenPaymasterAddress,userSelectedFeeQuote,feeQuotesResponse.feeQuotes[0].tokenAddress);
-       
-        const encodedCall = encodeFunctionData({
-          abi: parseAbi(["function increment()"]),
-          functionName: "increment",
-          args: [],
-        });
-
-        const transaction = {
-          to: "0x5343CE3D2fB551aC1baE4b8c9F27c090C709384d",
-          data: encodedCall,
-        };
-
-        const { wait } = await smartAccount?.sendTransaction(
-          transaction,
-          {
-            paymasterServiceData: {
-              mode: PaymasterMode.ERC20,
-              preferredToken: "0x7683022d84F726a96c4A6611cD31DBf5409c0Ac9",
-            },
-          }
-        );
-
-        const {
-          receipt: { transactionHash },
-          userOpHash,
-          success,
-        } = await wait();
-
-  
-   console.log("Transaction Hash", transactionHash);
- 
-
-        if (transactionHash) {
-          toast.update(toastId, {
-            render: "Transaction Successful",
-            type: "success",
-            autoClose: 5000,
-          });
-          setTxnHash(transactionHash);
-          await getCountId();
-        }
-      } else {
-        toast.error("No fee quotes available", { autoClose: 5000 });
+        setTxnHash(transactionHash);
+        await getCountId();
+      }
+      else{
+        toast.error("Transaction Unsuccessful Check You token Balance", { autoClose: 5000 });
       }
     } catch (error) {
       console.log(error);
@@ -333,8 +310,13 @@ export default function Home() {
                 Increment Count
               </button>
               {txnHash && (
-                <a target="_blank" href={`${chains[chainSelected].explorerUrl + txnHash}`}>
-                  <span className="text-white font-bold underline">Txn Hash</span>
+                <a
+                  target="_blank"
+                  href={`${chains[chainSelected].explorerUrl + txnHash}`}
+                >
+                  <span className="text-white font-bold underline">
+                    Txn Hash
+                  </span>
                 </a>
               )}
             </div>
@@ -343,7 +325,6 @@ export default function Home() {
             <span>USDC Balance: </span>
             <span>{tokenBalance}</span>
           </div>
-        
         </>
       )}
     </main>
